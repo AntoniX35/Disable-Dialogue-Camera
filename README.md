@@ -1,7 +1,6 @@
-# 📑 SFSE Plugin Template
-Native dll plugin for [starfield script extender](https://github.com/ianpatt/sfse).
-
-[Create a new plugin project from this template](https://github.com/new?template_name=SF_PluginTemplate&template_owner=gottyduke) and wait for the first workflow action to finish, it will setup project automatically.
+# 📑 Disable Dialogue Camera
+Disables the dialogue camera. Third person camera is now available in dialogues.
+https://www.nexusmods.com/starfield/mods/7157
 
 ## 📖 License
 

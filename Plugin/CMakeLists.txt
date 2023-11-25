@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 
 # info
 project(
-	Disable-Dialogue-Camera
+	DisableDialogueCamera
 	VERSION 1.0.0
 	LANGUAGES CXX
 )
