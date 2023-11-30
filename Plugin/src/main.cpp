@@ -13,6 +13,8 @@ namespace DisableDialogueCamera
 	
 	REL::Relocation<std::uintptr_t> Addr{ REL::ID(817115) };
 	
+	REL::Relocation<std::uintptr_t> AlwaysShow{ REL::ID(145943), 0x2E7};
+	
 	
 	RE::CameraState CameraState()
 	{
@@ -36,6 +38,8 @@ namespace DisableDialogueCamera
 		REL::Relocation<std::uintptr_t> DialogueCamera2{ REL::ID(153784), 0x2A};
 		constexpr std::uint8_t jmp[] = { 0xE9, 0x8D, 0x07, 0x00, 0x00, 0x90, 0x90 };
 		REL::safe_write(DialogueCamera2.address(), &jmp, sizeof(jmp));
+		
+		REL::safe_write(AlwaysShow.address(), &REL::JMP8, sizeof(REL::JMP8));
 		
 		RE::UI::GetSingleton()->RegisterSink(EventHandler::GetSingleton());
 
