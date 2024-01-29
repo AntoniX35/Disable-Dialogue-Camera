@@ -1,7 +1,7 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
     "name": "disable-dialogue-camera",
-    "version-string": "1.0.0",
+    "version-string": "1.0.2",
     "description": "Disables the dialogue camera. Third person camera is now available in dialogues.",
     "homepage": "https://github.com/AntoniX35/Disable-Dialogue-Camera",
     "dependencies": [

@@ -5,13 +5,24 @@ namespace DisableDialogueCamera
 	std::int32_t camera;
 	bool firstPerson = false;
 	bool thirdPerson = false;
-
-	REL::Relocation<std::uintptr_t> Call{ REL::ID(179039) };
+	std::int32_t dialogueMenu = 0;
+	bool shipMenu = false;
 	
 	REL::Relocation<std::uintptr_t> NoBlock1{ REL::ID(137819), 0x5F};
 	REL::Relocation<std::uintptr_t> NoBlock2{ REL::ID(137819), 0x70};
+	REL::Relocation<std::uintptr_t> NoBlock3{ REL::ID(120109), 0x8B};
+	REL::Relocation<std::uintptr_t> NoBlock4{ REL::ID(171169), 0xD5};
 	
-	REL::Relocation<std::uintptr_t> Addr{ REL::ID(817115) };
+	REL::Relocation<std::uintptr_t> ShowMenu{ REL::ID(891126) };
+	
+	REL::Relocation<std::uintptr_t> Addr1{ REL::ID(817115) };
+	REL::Relocation<std::uintptr_t> Addr2{ REL::ID(166169), 0x313 };
+	
+	REL::Relocation<std::uintptr_t> HookAddr1{ REL::ID(166169), 0x1AD};
+	REL::Relocation<std::uintptr_t> HookAddr2{ REL::ID(165937), 0x3F};
+	
+	REL::Relocation<std::uintptr_t> CallAddr1{ REL::ID(179039) };
+	REL::Relocation<std::uintptr_t> CallAddr2{ REL::ID(81121) };
 	
 	REL::Relocation<std::uintptr_t> AlwaysShow{ REL::ID(145943), 0x2E7};
 	
@@ -41,10 +52,13 @@ namespace DisableDialogueCamera
 		
 		REL::safe_write(AlwaysShow.address(), &REL::JMP8, sizeof(REL::JMP8));
 		
+		REL::safe_write(NoBlock3.address(), &REL::NOP5, sizeof(REL::NOP5));
+		
 		RE::UI::GetSingleton()->RegisterSink(EventHandler::GetSingleton());
 
 		if (*settings->enableMovement) {
 			REL::safe_write(NoBlock2.address(), &REL::NOP5, sizeof(REL::NOP5));
+			REL::safe_write(NoBlock4.address(), &REL::NOP5, sizeof(REL::NOP5));
 			{
 				struct Gamepad_Code : Xbyak::CodeGenerator
 				{
@@ -63,10 +77,10 @@ namespace DisableDialogueCamera
 						jmp(ptr[rip + retnLabel]);					
 					
 						L(addrLabel);
-						dq(Addr.address());
+						dq(Addr1.address());
 					
 						L(callLabel);
-						dq(Call.address());					
+						dq(CallAddr1.address());					
 
 						L(retnLabel);
 						dq(NoBlock1.address() + 0x5);
@@ -80,17 +94,113 @@ namespace DisableDialogueCamera
 				trampoline.write_branch<5>(NoBlock1.address(), trampoline.allocate(code));
 			}
 		}
+		
+		if (*settings->disablePOVChange) {
+			{
+				struct disableZoomIn_Code : Xbyak::CodeGenerator
+				{
+					disableZoomIn_Code()
+					{
+						Xbyak::Label retnLabel;
+						Xbyak::Label menuLabel;
+						Xbyak::Label jmpLabel;
+						
+						je("Skip");
+						
+						mov(rcx, (uintptr_t)&dialogueMenu);
+						cmp(dword[rcx], 00);
+						je("Original");
+						
+						mov(rcx, ptr[rip + menuLabel]);
+					    cmp(dword[rcx + 0x84], 00);
+						je("Original");
+						
+						jmp("Skip");
+						
+						L("Original");
+						jmp(ptr[rip + retnLabel]);
+						
+						L("Skip");
+						jmp(ptr[rip + jmpLabel]);
+						
+						L(jmpLabel);
+						dq(Addr2.address());
+						
+						L(menuLabel);
+						dq(ShowMenu.address());
+
+						L(retnLabel);
+						dq(HookAddr1.address() + 0x6);
+					}
+				};
+
+				disableZoomIn_Code code;
+				code.ready();
+
+				auto& trampoline = SFSE::GetTrampoline();
+				trampoline.write_branch<6>(HookAddr1.address(), trampoline.allocate(code));
+			}
+			{
+				struct disableZoomOut_Code : Xbyak::CodeGenerator
+				{
+					disableZoomOut_Code()
+					{
+						Xbyak::Label retnLabel;
+						Xbyak::Label callLabel;
+						Xbyak::Label menuLabel;
+						
+						mov(rcx, (uintptr_t)&dialogueMenu);
+						cmp(dword[rcx], 00);
+						je("Original");
+						
+						mov(rcx, ptr[rip + menuLabel]);
+					    cmp(dword[rcx + 0x84], 00);
+						je("Original");
+						
+						jmp("Skip");
+						
+						L("Original");
+						call(ptr[rip + callLabel]);
+						
+						L("Skip");
+						jmp(ptr[rip + retnLabel]);
+						
+						L(menuLabel);
+						dq(ShowMenu.address());
+
+						L(callLabel);
+						dq(CallAddr2.address());
+
+						L(retnLabel);
+						dq(HookAddr2.address() + 0x5);
+					}
+				};
+
+				disableZoomOut_Code code;
+				code.ready();
+
+				auto& trampoline = SFSE::GetTrampoline();
+				trampoline.write_branch<5>(HookAddr2.address(), trampoline.allocate(code));
+			}
+		}
 
 		INFO("Installed");
 	}
-		
+
 	RE::BSEventNotifyControl EventHandler::ProcessEvent(const RE::MenuOpenCloseEvent& a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
 	{
 		{
-			if (a_event.menuName == "DialogueMenu") 
+			if (a_event.menuName == "SpaceshipHudMenu" && a_event.opening) {
+				shipMenu = true;
+			}
+			if (a_event.menuName == "SpaceshipHudMenu" && !a_event.opening) {
+				shipMenu = false;
+			}
+			if (a_event.menuName == "DialogueMenu" && !shipMenu) 
 			{
 				if (a_event.opening)
 				{
+					dialogueMenu = 1;
 					if (FirstPerson()) 
 					{
 						if (camera == 2)
@@ -109,7 +219,8 @@ namespace DisableDialogueCamera
 					}
 				}
 				else 
-				{					
+				{
+					dialogueMenu = 0;			
 					if (FirstPerson())
 					{
 						if (camera == 1 && thirdPerson)

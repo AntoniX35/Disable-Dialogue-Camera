@@ -8,6 +8,7 @@ namespace Settings
 		std::call_once(ConfigInit, [&]() {
 			config.Bind<0, 2>(cameraType, 0);
 			config.Bind(enableMovement, false);
+			config.Bind(disablePOVChange, true);
 		});
 
 		config.Load();

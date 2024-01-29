@@ -11,6 +11,8 @@ namespace Settings
     public:
 		Integer cameraType{ "iCameraType", "Main" };
 		Boolean enableMovement{ "bEnableMovement", "Main" };
+		Boolean disablePOVChange{ "bDisablePOVChange", "Main" };
+
 
         void Load() noexcept;
 
