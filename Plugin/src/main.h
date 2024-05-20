@@ -1,7 +1,7 @@
 #pragma once
 #include "DKUtil/Config.hpp"
 #include "Settings.h"
-
+bool newver;
 template <class T>
 class ISingleton
 {
